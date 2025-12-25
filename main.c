@@ -87,10 +87,10 @@ int main(void) {
 			case 5:		//练习模式代码
 				practice_words();
 				break;
-			case 6:
+			case 6:		//考试模式模块
 				examine_words();
 				break;
-			case 7:
+			case 7:		//错题本模块
 				wrong_words();
 				break;
 			case 8:clearScreen();		//退出
