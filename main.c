@@ -22,7 +22,7 @@ int choose,choose_5,score = 0;
 char a,b,input_spelling[200],path[300],input_meaning[200],random_char[50],user_name[50],user_password[50];
 int wordsCount = 0,wrong_words_count = 0,use_count = 0;
 void speak(const char* word);
-void clearScreen();		//NOTE:!!!!!!!!!!请转到函数根据编译器来修改清屏函数!!!!!!!!
+void clearScreen();
 void lower(char* word);
 void find_use();
 void add_use();
@@ -156,7 +156,11 @@ void lower(char* word) {
 	}
 }
 void clearScreen() {		//清屏函数
-    system("clear");	//!!!我使用的是cygwin64编译器，所以这里使用的是system("clear"),如果使用win编译器请改成system("cls")!!!
+#ifdef _WIN32
+	system("cls");    // 如果是 Windows 环境，执行 cls
+#else
+	system("clear");  // 如果是 Linux/Mac/Cygwin 环境，执行 clear
+#endif
 }
 void find_use() {
 	FILE* fp = fopen("users.txt","r");
@@ -569,6 +573,7 @@ void examine_words() {
 					printf("错误,正确答案为%s\n",dictionary[random].meaning);
 					speak("很抱歉答案错误，正确答案是");
 					speak(dictionary[random].meaning);
+					clearScreen();
 					if (find_wrong_words(dictionary[random].spelling) == -1) {
 						char filename[200];
 						sprintf(filename,"%s_wrong_words.txt",user_name);
