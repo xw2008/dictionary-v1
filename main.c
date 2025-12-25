@@ -11,16 +11,21 @@ typedef struct {
 	char meaning[200];
 	char wrong_words_spelling[200];
 	char wrong_words_meaning[200];
+	char names[200];
+	char password[200];
 } Words;
 Words dictionary[8000];
+Words users[400];
+
+
 int choose,choose_5,score = 0;
-char a,b,input_spelling[200],path[300],input_meaning[200],random_char[50];
-
-
-int wordsCount = 0,wrong_words_count = 0;
+char a,b,input_spelling[200],path[300],input_meaning[200],random_char[50],user_name[50],user_password[50];
+int wordsCount = 0,wrong_words_count = 0,use_count = 0;
 void speak(const char* word);
 void clearScreen();		//NOTE:!!!!!!!!!!请转到函数根据编译器来修改清屏函数!!!!!!!!
 void lower(char* word);
+void find_use();
+void add_use();
 void find_words();
 void add_words();
 void remove_words();
@@ -30,14 +35,43 @@ void examine_words();
 void wrong_words();
 int load_words(const char* filepath);
 int load_wrong_words(const char* filepath);
+int load_user_words(const char* filepath);
 int find_word(const char* word);
 int find_wrong_words(const char* word);
-int compare_words(const void* a, const void* b);
 int num();
 
 
 int main(void) {
 	srand(time(NULL));
+	use_count = load_user_words("users.txt");
+	clearScreen();
+	printf(
+		"===================================\n"
+		"欢迎使用电子词典v1版本					\n"
+		"									\n"
+		"已有账号？登录请输入1					\n"
+		"还没有账号？注册请输入2					\n"
+		"===================================\n"
+		);
+	scanf("%d",&choose);
+	clearScreen();
+	do {
+		switch (choose) {
+			case 1:
+				find_use();
+				Sleep(3000);
+				clearScreen();
+				break;
+			case 2:
+				add_use();
+				Sleep(3000);
+				clearScreen();
+				break;
+			default:printf("输入错误，系统退出\n");
+				exit(0);
+		}
+	}while (choose == 1 || choose == 2);
+	clearScreen();
 	printf("是否使用系统自带的四级词汇词典\n");
 	scanf(" %c",&a);
 	if (a == 'y') {
@@ -50,7 +84,6 @@ int main(void) {
 	const char* mypath = path;
 	printf("正在加载词典文件\n");
 	wordsCount = load_words(mypath);
-	wrong_words_count = load_wrong_words("wrong_words.txt");
 	if (wordsCount > 0) {
 		printf("成功加载文件,词库单词个数为%d\n",wordsCount);
 	}
@@ -101,7 +134,7 @@ int main(void) {
 				speak("输入错误，系统退出");
 				Sleep(3000);
 				clearScreen();
-				break;
+				exit(0);
 		}
 	}
 }
@@ -113,7 +146,6 @@ void speak(const char* word) {		//发音函数
     // 原理：调用 PowerShell 发音，并用双引号把命令包起来，
     // 这样 CLion 的 Shell 就不会误把括号当成特殊字符处理了。
     sprintf(command, "powershell -c \"(New-Object -ComObject SAPI.SpVoice).Speak('%s')\"", word);
-
     system(command);
 }
 void lower(char* word) {
@@ -125,6 +157,58 @@ void lower(char* word) {
 }
 void clearScreen() {		//清屏函数
     system("clear");	//!!!我使用的是cygwin64编译器，所以这里使用的是system("clear"),如果使用win编译器请改成system("cls")!!!
+}
+void find_use() {
+	FILE* fp = fopen("users.txt","r");
+	if (fp == NULL) {
+		printf("无法打开文件，系统退出\n");
+		Sleep(3000);
+		exit(0);
+	}
+	printf("请输入用户名及密码\n");
+	scanf("%s %s",user_name,user_password);
+	for (int i = 0; i < use_count; i++) {
+		if (strcmp(users[i].names,user_name) == 0) {
+			if (strcmp(users[i].password,user_password) == 0) {
+				printf("登录成功,欢迎回来%s\n",users[i].names);
+				speak("登录成功,欢迎回来");
+				speak(users[i].names);
+				choose = 0;
+				char filename[512];
+				sprintf(filename,"%s_wrong_words.txt",user_name);
+				wrong_words_count = load_wrong_words(filename);
+			}
+			else {
+				printf("密码输入错误\n");
+				speak("密码错误");
+				choose = 1;
+			}
+			return;
+		}
+	}
+	printf("未找到用户，请注册\n");
+	speak("请注册");
+	choose = 2;
+}
+void add_use() {
+	FILE* fp = fopen("users.txt","a");
+	if (fp == NULL) {
+		printf("文件无法打开\n");
+		Sleep(3000);
+		exit(0);
+	}
+	printf("请输入你的用户名和密码\n");
+	scanf("%s %s",user_name,user_password);
+	strcpy(users[use_count].names,user_name);
+	strcpy(users[use_count].password,user_password);
+	fprintf(fp,"%s %s\n",users[use_count].names,users[use_count].password);
+	fclose(fp);
+	use_count++;
+	printf("注册成功，欢迎进入电子词典%s\n",users[use_count].names);
+	speak("欢迎进入电子词典");
+	speak(users[use_count].names);
+	choose = 0;
+	clearScreen();
 }
 void find_words() {
 	do {
@@ -388,7 +472,9 @@ void practice_words() {
 					speak("很抱歉答案错误，正确答案是");
 					speak(dictionary[random].meaning);
 					if (find_wrong_words(dictionary[random].spelling) == -1) {
-						FILE *wrong_words = fopen("wrong_words.txt","a");
+						char filename[200];
+						sprintf(filename,"%s_wrong_words.txt",user_name);
+						FILE *wrong_words = fopen(filename,"a");
 						if (wrong_words_count < 8000) {
 							strcpy(dictionary[wrong_words_count].wrong_words_spelling,dictionary[random].spelling);
 							strcpy(dictionary[wrong_words_count].wrong_words_meaning,dictionary[random].meaning);
@@ -424,7 +510,9 @@ void practice_words() {
 					speak("很抱歉答案错误，正确答案是");
 					speak(dictionary[random].spelling);
 					if (find_wrong_words(dictionary[random].spelling) == -1) {
-						FILE *wrong_words = fopen("wrong_words.txt","a");
+						char filename[200];
+						sprintf(filename,"%s_wrong_words.txt",user_name);
+						FILE *wrong_words = fopen(filename,"a");
 						if (wrong_words_count < 8000) {
 							strcpy(dictionary[wrong_words_count].wrong_words_spelling,dictionary[random].spelling);
 							strcpy(dictionary[wrong_words_count].wrong_words_meaning,dictionary[random].meaning);
@@ -482,7 +570,9 @@ void examine_words() {
 					speak("很抱歉答案错误，正确答案是");
 					speak(dictionary[random].meaning);
 					if (find_wrong_words(dictionary[random].spelling) == -1) {
-						FILE *wrong_words = fopen("wrong_words.txt","a");
+						char filename[200];
+						sprintf(filename,"%s_wrong_words.txt",user_name);
+						FILE *wrong_words = fopen(filename,"a");
 						if (wrong_words_count < 8000) {
 							strcpy(dictionary[wrong_words_count].wrong_words_spelling,dictionary[random].spelling);
 							strcpy(dictionary[wrong_words_count].wrong_words_meaning,dictionary[random].meaning);
@@ -519,7 +609,9 @@ void examine_words() {
 					speak("很抱歉答案错误，正确答案是");
 					speak(dictionary[random].spelling);
 					if (find_wrong_words(dictionary[random].spelling) == -1) {
-						FILE *wrong_words = fopen("wrong_words.txt","a");
+						char filename[200];
+						sprintf(filename,"%s_wrong_words.txt",user_name);
+						FILE *wrong_words = fopen(filename,"a");
 						if (wrong_words_count < 8000) {
 							strcpy(dictionary[wrong_words_count].wrong_words_spelling,dictionary[random].spelling);
 							strcpy(dictionary[wrong_words_count].wrong_words_meaning,dictionary[random].meaning);
@@ -575,7 +667,7 @@ void wrong_words() {
 			clearScreen();
 			exit(0);
 		}
-		printf("是否留在考试模式中\n");
+		printf("是否留在错题本中\n");
 		scanf(" %c",&a);
 	}while (a == 'y');
 	clearScreen();
@@ -609,10 +701,6 @@ int load_words(const char* filepath) {		//加载函数
 }
 int load_wrong_words(const char* filepath) {		//加载错题函数
 	FILE* fp = fopen(filepath, "r");
-	if (fp == NULL) {
-		printf("错误：无法打开文件\n");
-		return 0;
-	}
 	int i = 0;
 	while (fscanf(fp, "%s", dictionary[i].wrong_words_spelling) != EOF) {
 		lower(dictionary[i].wrong_words_spelling);
@@ -630,6 +718,20 @@ int load_wrong_words(const char* filepath) {		//加载错题函数
 		}
 		i++;
 		if (i >= 8000) break;
+	}
+	fclose(fp);
+	return i;
+}
+int load_user_words(const char* filepath) {
+	FILE* fp = fopen(filepath, "r");
+	if (fp == NULL) {
+		printf("错误：无法打开文件\n");
+		return 0;
+	}
+	int i = 0;
+	while (fscanf(fp, "%s %s", users[i].names,users[i].password) != EOF) {
+		i++;
+		if (i >= 400) break;
 	}
 	fclose(fp);
 	return i;
