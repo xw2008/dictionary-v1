@@ -701,6 +701,9 @@ int load_words(const char* filepath) {		//加载函数
 }
 int load_wrong_words(const char* filepath) {		//加载错题函数
 	FILE* fp = fopen(filepath, "r");
+	if (fp == NULL) {
+		return 0;
+	}
 	int i = 0;
 	while (fscanf(fp, "%s", dictionary[i].wrong_words_spelling) != EOF) {
 		lower(dictionary[i].wrong_words_spelling);
