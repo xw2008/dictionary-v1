@@ -14,7 +14,7 @@
 
 ## 🛠️ 技术栈
 
-- **语言**：C (Standard C99)
+- **语言**：C (Standard C11)
 - **构建工具**：CMake
 - **开发工具**：CLion / Visual Studio Code
 
